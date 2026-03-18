@@ -1,10 +1,11 @@
 (function() {
+    
     if (!window.vkBridge) {
         document.getElementById('content').innerHTML = 
             '<div class="error">Ошибка: VK Bridge не загружен</div>';
         return;
     }
-
+    
     var bridge = window.vkBridge.default || window.vkBridge;
     bridge.send('VKWebAppInit');
     
@@ -19,6 +20,7 @@
         knowledgeTexts: {},
         diagnosticsList: null,
         diagnosticSolutions: {},
+        networkSteps: {},  // для хранения шагов диагностики сети
         info: null
     };
     
@@ -131,42 +133,10 @@
     }
     
     function renderKnowledgeContent(key, data) {
-        if (typeof data === 'string' || data.text) {
-            contentEl.innerHTML = '<div class="kb-text">' + (data.text || data) + '</div>';
-            return;
-        }
-        if (data.type === 'expandable') {
-            var html = '<h3>' + data.title + '</h3>';
-            for (var i = 0; i < data.items.length; i++) {
-                var item = data.items[i];
-                html += '<button class="menu-item" onclick="app.showNetworkStep(\'' + item.key + '\')">' + item.text + '</button>';
-            }
-            html += '<button class="menu-item btn-danger" onclick="app.needOperator()">📞 Связь с администратором</button>';
-            contentEl.innerHTML = html;
-        }
+        // База знаний всегда возвращает текст (поле text или просто строку)
+        var text = data.text || data;
+        contentEl.innerHTML = '<div class="kb-text">' + text + '</div>';
     }
-
-    function showNetworkStep(step) {
-        currentScreen = 'network_step:' + step;
-        headerEl.innerHTML = '<button class="back-btn" onclick="app.showKnowledgeContent(\'network\')">← Назад к списку</button>';
-        
-        contentEl.innerHTML = '<div class="loading">Загрузка...</div>';
-        
-        callProcedure('getNetworkDetails', { step: step }, function(data) {
-            var html = '<div class="kb-text">' + data.text + '</div>';
-            html += '<div class="solution-actions">';
-            html += '<button class="menu-item btn-success" onclick="app.stepSolved()">✅ Помогло</button>';
-            html += '<button class="menu-item" onclick="app.showKnowledgeContent(\'network\')">🔁 Другой шаг</button>';
-            html += '<button class="menu-item btn-danger" onclick="app.needOperator()">📞 Связь с администратором</button>';
-            html += '</div>';
-            contentEl.innerHTML = html;
-        });
-    }
-    
-    window.stepSolved = function() {
-        alert('✅ Отлично! Проблема решена.');
-        showMainMenu();
-    };
     
     function showDiagnosticsList() {
         currentScreen = 'diagnostics';
@@ -189,22 +159,68 @@
         var html = '';
         for (var i = 0; i < data.problems.length; i++) {
             var p = data.problems[i];
-            html += '<button class="menu-item" onclick="app.showDiagnosticSolution(\'' + p.key + '\')">' + p.icon + ' ' + p.title + '</button>';
+            html += '<button class="menu-item" onclick="app.handleDiagnosticChoice(\'' + p.key + '\')">' + p.icon + ' ' + p.title + '</button>';
         }
         contentEl.innerHTML = html;
+    }
+    
+    function handleDiagnosticChoice(key) {
+        if (key === 'network_diag') {
+            showNetworkDiagnostics();
+        } else {
+            showDiagnosticSolution(key);
+        }
+    }
+    
+    function showNetworkDiagnostics() {
+        currentScreen = 'network_diag';
+        headerEl.innerHTML = '<button class="back-btn" onclick="app.showDiagnosticsList()">← Назад</button>';
+        
+        contentEl.innerHTML = '<div class="loading">Загрузка...</div>';
+        
+        callProcedure('getNetworkSteps', {}, function(data) {
+            var steps = data.steps;
+            var html = '<h3>🌐 Диагностика сети</h3>';
+            for (var i = 0; i < steps.length; i++) {
+                var step = steps[i];
+                html += '<button class="menu-item" onclick="app.showNetworkStep(\'' + step.key + '\')">' + step.text + '</button>';
+            }
+            contentEl.innerHTML = html;
+        });
+    }
+    
+    function showNetworkStep(step) {
+        currentScreen = 'network_step:' + step;
+        headerEl.innerHTML = '<button class="back-btn" onclick="app.showNetworkDiagnostics()">← Назад к списку</button>';
+        contentEl.innerHTML = '<div class="loading">Загрузка...</div>';
+        var stepNumber = step.substring(4);
+        callProcedure('getNetworkDetails', { step: stepNumber }, function(data) {
+            renderNetworkStep(step, data.text);
+        });
+    }
+    
+    function renderNetworkStep(step, text) {
+        var html = '<div class="kb-text">' + text + '</div>';
+        html += '<div class="solution-actions">';
+        html += '<button class="menu-item" onclick="app.showNetworkDiagnostics()">🔁 Другой шаг</button>';
+        html += '<button class="menu-item btn-success" onclick="app.stepSolved()">✅ Помогло</button>';
+        html += '</div>';
+        contentEl.innerHTML = html;
+    }
+    
+    function stepSolved() {
+        alert('✅ Отлично! Проблема решена.');
+        showMainMenu();
     }
     
     function showDiagnosticSolution(key) {
         currentScreen = 'solution:' + key;
         headerEl.innerHTML = '<button class="back-btn" onclick="app.showDiagnosticsList()">← Назад</button>';
-        
         if (cache.diagnosticSolutions[key]) {
             renderDiagnosticSolution(key, cache.diagnosticSolutions[key]);
             return;
         }
-        
         contentEl.innerHTML = '<div class="loading">Загрузка...</div>';
-        
         callProcedure('getDiagnosticSolution', { problem: key }, function(data) {
             cache.diagnosticSolutions[key] = data.text;
             renderDiagnosticSolution(key, data.text);
@@ -215,7 +231,6 @@
         var html = '<div class="kb-text">' + text + '</div>';
         html += '<div class="solution-actions">';
         html += '<button class="menu-item btn-success" onclick="app.problemSolved()">✅ Проблема решена</button>';
-        html += '<button class="menu-item btn-danger" onclick="app.needOperator()">❌ Нужна помощь</button>';
         html += '</div>';
         contentEl.innerHTML = html;
     }
@@ -223,14 +238,11 @@
     function showInfo() {
         currentScreen = 'info';
         headerEl.innerHTML = '<button class="back-btn" onclick="app.showMainMenu()">← Назад</button>';
-        
         if (cache.info) {
             contentEl.innerHTML = '<div class="kb-text">' + cache.info + '</div>';
             return;
         }
-        
         contentEl.innerHTML = '<div class="loading">Загрузка...</div>';
-        
         callProcedure('getInfo', {}, function(data) {
             cache.info = data.text;
             contentEl.innerHTML = '<div class="kb-text">' + data.text + '</div>';
@@ -240,19 +252,6 @@
     function problemSolved() {
         alert('✅ Отлично! Рады, что помогли.');
         showMainMenu();
-    }
-    
-    function needOperator() {
-        // Прямая ссылка на диалог с сообществом
-        var chatUrl = 'https://vk.com/im?sel=-214856459';
-        
-        // Пробуем открыть через Bridge
-        bridge.send('VKWebAppOpenExternalUrl', {
-            url: chatUrl
-        }).catch(function() {
-            // Если не вышло — показываем ссылку
-            alert('Напишите нам: ' + chatUrl);
-        });
     }
     
     function handleMainButton(action, param) {
@@ -270,11 +269,14 @@
         showKnowledgeCategories: showKnowledgeCategories,
         showKnowledgeContent: showKnowledgeContent,
         showDiagnosticsList: showDiagnosticsList,
+        handleDiagnosticChoice: handleDiagnosticChoice,
         showDiagnosticSolution: showDiagnosticSolution,
+        showNetworkDiagnostics: showNetworkDiagnostics,
+        showNetworkStep: showNetworkStep,
+        stepSolved: stepSolved,
         showInfo: showInfo,
         handleMainButton: handleMainButton,
-        problemSolved: problemSolved,
-        needOperator: needOperator
+        problemSolved: problemSolved
     };
     
     initApp();
