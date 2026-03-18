@@ -244,7 +244,7 @@
     
     function needOperator() {
         bridge.send('VKWebAppOpenApp', {
-            app_id: 54477515,
+            app_id: app54477515,
             owner_id: -214856459
         }).catch(function() {
             alert('Не удалось открыть чат');
