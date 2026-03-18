@@ -1,8 +1,7 @@
 (function() {
-    // Проверка Bridge
     if (!window.vkBridge) {
         document.getElementById('content').innerHTML = 
-            '<div class="error">Ошибка: VK Bridge не загружен. Проверьте подключение.</div>';
+            '<div class="error">Ошибка: VK Bridge не загружен</div>';
         return;
     }
 
@@ -13,10 +12,7 @@
     var contentEl = document.getElementById('content');
     var userToken = null;
     
-    // Состояние - текущий экран
     var currentScreen = 'main';
-    
-    // Тексты ответов (синхронный кэш)
     var cache = {
         mainMenu: null,
         knowledgeCategories: null,
@@ -26,26 +22,21 @@
         info: null
     };
     
-    // Получение токена перед запуском
     function initApp() {
-        contentEl.innerHTML = '<div class="loading">Авторизация...</div>';
-        
         bridge.send("VKWebAppGetAuthToken", {
-            "app_id": 54477515,  // ID вашего приложения
-            "scope": ""           // базовые права
+            "app_id": 54477515,
+            "scope": ""
         }).then(function(data) {
             userToken = data.access_token;
             showMainMenu();
-        }).catch(function(error) {
-            console.error('Auth error:', error);
-            contentEl.innerHTML = '<div class="error">Ошибка авторизации. Попробуйте перезагрузить приложение.</div>';
+        }).catch(function() {
+            contentEl.innerHTML = '<div class="error">Ошибка авторизации</div>';
         });
     }
     
-    // Универсальная функция вызова процедур
     function callProcedure(method, params, callback) {
         if (!userToken) {
-            contentEl.innerHTML = '<div class="error">Нет токена доступа</div>';
+            contentEl.innerHTML = '<div class="error">Нет доступа</div>';
             return;
         }
         
@@ -54,7 +45,6 @@
             access_token: userToken
         };
         
-        // Добавляем пользовательские параметры
         for (var key in params) {
             if (params.hasOwnProperty(key)) {
                 requestParams[key] = params[key];
@@ -66,13 +56,11 @@
             params: requestParams
         }).then(function(result) {
             callback(result.response);
-        }).catch(function(error) {
-            console.error('Procedure error:', error);
-            contentEl.innerHTML = '<div class="error">Ошибка загрузки данных</div>';
+        }).catch(function() {
+            contentEl.innerHTML = '<div class="error">Ошибка загрузки</div>';
         });
     }
     
-    // Функция отображения главного меню
     function showMainMenu() {
         currentScreen = 'main';
         headerEl.innerHTML = '';
@@ -99,7 +87,6 @@
         contentEl.innerHTML = html;
     }
     
-    // Категории знаний
     function showKnowledgeCategories() {
         currentScreen = 'knowledge';
         headerEl.innerHTML = '<button class="back-btn" onclick="app.showMainMenu()">← Назад</button>';
@@ -126,7 +113,6 @@
         contentEl.innerHTML = html;
     }
     
-    // Текст категории
     function showKnowledgeContent(key) {
         currentScreen = 'category:' + key;
         headerEl.innerHTML = '<button class="back-btn" onclick="app.showKnowledgeCategories()">← Назад</button>';
@@ -144,7 +130,6 @@
         });
     }
     
-    // Диагностика - список проблем
     function showDiagnosticsList() {
         currentScreen = 'diagnostics';
         headerEl.innerHTML = '<button class="back-btn" onclick="app.showMainMenu()">← Назад</button>';
@@ -171,7 +156,6 @@
         contentEl.innerHTML = html;
     }
     
-    // Решение диагностики
     function showDiagnosticSolution(key) {
         currentScreen = 'solution:' + key;
         headerEl.innerHTML = '<button class="back-btn" onclick="app.showDiagnosticsList()">← Назад</button>';
@@ -198,7 +182,6 @@
         contentEl.innerHTML = html;
     }
     
-    // Информация о боте
     function showInfo() {
         currentScreen = 'info';
         headerEl.innerHTML = '<button class="back-btn" onclick="app.showMainMenu()">← Назад</button>';
@@ -216,7 +199,6 @@
         });
     }
     
-    // Обработчики действий
     function problemSolved() {
         alert('✅ Отлично! Рады, что помогли.');
         showMainMenu();
@@ -227,7 +209,7 @@
             app_id: 6123443123,
             owner_id: -214856459
         }).catch(function() {
-            alert('Не удалось открыть чат. Обратитесь в поддержку.');
+            alert('Не удалось открыть чат');
         });
     }
     
@@ -241,7 +223,6 @@
         }
     }
     
-    // Экспортируем функции в глобальную область
     window.app = {
         showMainMenu: showMainMenu,
         showKnowledgeCategories: showKnowledgeCategories,
@@ -254,6 +235,5 @@
         needOperator: needOperator
     };
     
-    // Старт с авторизацией
     initApp();
 })();
