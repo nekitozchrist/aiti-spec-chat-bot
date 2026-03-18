@@ -243,11 +243,12 @@
     }
     
     function needOperator() {
-        bridge.send('VKWebAppOpenApp', {
-            app_id: 54477515,
-            owner_id: -214856459
+        // Просто открыть диалог (если пользователь уже может писать сообществу)
+        bridge.send('VKWebAppOpenMessages', {
+            peer_id: -214856459
         }).catch(function() {
-            alert('Не удалось открыть чат');
+            // Если не получилось — показать ссылку
+            alert('Напишите нам: https://vk.com/im?sel=-214856459');
         });
     }
     
