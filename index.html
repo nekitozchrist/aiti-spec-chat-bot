@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Разрешаем встраивание в iframe для VK мини-приложений -->
+    <!-- Устаревший способ для старых браузеров (может не поддерживаться) -->
+    <meta http-equiv="X-Frame-Options" content="ALLOW-FROM https://vk.com">
+    <!-- Современный способ: Content Security Policy -->
+    <!-- Разрешаем встраивание с доменов VK и всех поддоменов -->
+    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' https://vk.com https://*.vk.com https://vk.ru https://*.vk.ru; default-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <title>ИТ поддержка</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header" id="header"></div>
+        <div class="content" id="content">
+            <div class="loading">Загрузка...</div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
