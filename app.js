@@ -24,7 +24,7 @@
     
     function initApp() {
         bridge.send("VKWebAppGetAuthToken", {
-            "app_id": 54477515,
+            "app_id": app54477515,
             "scope": ""
         }).then(function(data) {
             userToken = data.access_token;
