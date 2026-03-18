@@ -243,12 +243,15 @@
     }
     
     function needOperator() {
-        // Просто открыть диалог (если пользователь уже может писать сообществу)
-        bridge.send('VKWebAppOpenMessages', {
-            peer_id: -214856459
+        // Прямая ссылка на диалог с сообществом
+        var chatUrl = 'https://vk.com/im?sel=-214856459';
+        
+        // Пробуем открыть через Bridge
+        bridge.send('VKWebAppOpenExternalUrl', {
+            url: chatUrl
         }).catch(function() {
-            // Если не получилось — показать ссылку
-            alert('Напишите нам: https://vk.com/im?sel=-214856459');
+            // Если не вышло — показываем ссылку
+            alert('Напишите нам: ' + chatUrl);
         });
     }
     
