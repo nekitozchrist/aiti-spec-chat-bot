@@ -24,7 +24,7 @@
     
     function initApp() {
         bridge.send("VKWebAppGetAuthToken", {
-            "app_id": app54477515,
+            "app_id": 54477515,
             "scope": ""
         }).then(function(data) {
             userToken = data.access_token;
@@ -244,7 +244,7 @@
     
     function needOperator() {
         bridge.send('VKWebAppOpenApp', {
-            app_id: app54477515,
+            app_id: 54477515,
             owner_id: -214856459
         }).catch(function() {
             alert('Не удалось открыть чат');
