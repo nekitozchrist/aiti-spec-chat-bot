@@ -118,17 +118,55 @@
         headerEl.innerHTML = '<button class="back-btn" onclick="app.showKnowledgeCategories()">← Назад</button>';
         
         if (cache.knowledgeTexts[key]) {
-            contentEl.innerHTML = '<div class="kb-text">' + cache.knowledgeTexts[key] + '</div>';
+            renderKnowledgeContent(key, cache.knowledgeTexts[key]);
             return;
         }
         
         contentEl.innerHTML = '<div class="loading">Загрузка...</div>';
         
         callProcedure('getKnowledgeText', { category: key }, function(data) {
-            cache.knowledgeTexts[key] = data.text;
-            contentEl.innerHTML = '<div class="kb-text">' + data.text + '</div>';
+            cache.knowledgeTexts[key] = data;
+            renderKnowledgeContent(key, data);
         });
     }
+    
+    function renderKnowledgeContent(key, data) {
+        if (typeof data === 'string' || data.text) {
+            contentEl.innerHTML = '<div class="kb-text">' + (data.text || data) + '</div>';
+            return;
+        }
+        if (data.type === 'expandable') {
+            var html = '<h3>' + data.title + '</h3>';
+            for (var i = 0; i < data.items.length; i++) {
+                var item = data.items[i];
+                html += '<button class="menu-item" onclick="app.showNetworkStep(\'' + item.key + '\')">' + item.text + '</button>';
+            }
+            html += '<button class="menu-item btn-danger" onclick="app.needOperator()">📞 Связь с администратором</button>';
+            contentEl.innerHTML = html;
+        }
+    }
+
+    function showNetworkStep(step) {
+        currentScreen = 'network_step:' + step;
+        headerEl.innerHTML = '<button class="back-btn" onclick="app.showKnowledgeContent(\'network\')">← Назад к списку</button>';
+        
+        contentEl.innerHTML = '<div class="loading">Загрузка...</div>';
+        
+        callProcedure('getNetworkDetails', { step: step }, function(data) {
+            var html = '<div class="kb-text">' + data.text + '</div>';
+            html += '<div class="solution-actions">';
+            html += '<button class="menu-item btn-success" onclick="app.stepSolved()">✅ Помогло</button>';
+            html += '<button class="menu-item" onclick="app.showKnowledgeContent(\'network\')">🔁 Другой шаг</button>';
+            html += '<button class="menu-item btn-danger" onclick="app.needOperator()">📞 Связь с администратором</button>';
+            html += '</div>';
+            contentEl.innerHTML = html;
+        });
+    }
+    
+    window.stepSolved = function() {
+        alert('✅ Отлично! Проблема решена.');
+        showMainMenu();
+    };
     
     function showDiagnosticsList() {
         currentScreen = 'diagnostics';
